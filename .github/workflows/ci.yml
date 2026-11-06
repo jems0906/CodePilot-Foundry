@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: codepilot_test
+          POSTGRES_USER: codepilot
+          POSTGRES_PASSWORD: ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U codepilot -d codepilot_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_TEST_URL: postgresql://codepilot:ci-only@localhost:5432/codepilot_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt -r target_codebase/requirements.txt
+      - name: Test backend
+        working-directory: backend
+        run: python -m pytest tests -q
+      - name: Install EvalForge dependencies
+        run: python -m pip install -r evalforge/backend/requirements.txt
+      - name: Test EvalForge
+        working-directory: evalforge/backend
+        run: python -m pytest tests -q
+      - name: Install sandbox runner dependencies
+        run: python -m pip install -r sandbox_runner/requirements.txt
+      - name: Test sandbox archive policy
+        working-directory: sandbox_runner
+        run: python -m pytest tests -q
+      - name: Test remote sandbox executor
+        working-directory: backend
+        run: python -m pytest tests/test_remote_executor.py -q
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Install EvalForge frontend dependencies
+        working-directory: evalforge/frontend
+        run: npm ci
+      - name: Build EvalForge frontend
+        working-directory: evalforge/frontend
+        run: npm run build
+      - name: Start isolated Compose stack
+        run: docker compose up --build -d
+      - name: Run sandbox and EvalForge integration smoke test
+        run: python scripts/sandbox_smoke.py
+      - name: Tear down Compose stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans

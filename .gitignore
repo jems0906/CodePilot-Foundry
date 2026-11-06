@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+data/
+frontend/node_modules/
+frontend/dist/
+evalforge/frontend/node_modules/
+evalforge/frontend/dist/
+.pytest_cache/
+*.sqlite3
