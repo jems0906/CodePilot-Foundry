@@ -52,6 +52,8 @@ Install `backend/requirements-openai.txt`, set `AGENT_PROVIDER=openai` and `OPEN
 
 ## Checks
 
+GitHub Actions runs the checks below and the Compose sandbox/EvalForge smoke test on pushes and pull requests. The `test` status check is required before merging into `main`.
+
 ```powershell
 cd backend
 python -m pytest tests -q
