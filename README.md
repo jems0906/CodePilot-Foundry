@@ -39,6 +39,16 @@ EvalForge is the companion benchmark dashboard. With Compose running, open <http
 
 Create a task in the left panel and run it. The mock provider proposes a Unicode case-folding fix, tests it on a temporary copy, and records the plan, file read, diff, command output, and self-review. Inspect the event history and diff, then reject or approve. Rejection leaves the target bytes unchanged; approval applies the saved proposal only if the original file still matches its snapshot.
 
+## Demo walkthrough
+
+1. Start the integrated stack with `docker compose up --build -d`.
+2. Open CodePilot at <http://localhost:8080>, submit a Unicode case-insensitive label-normalization task, and run it.
+3. Inspect the proposed diff and ordered event history, including the recorded sandbox policy. Reject the proposal to leave the synthetic source unchanged.
+4. Open EvalForge at <http://localhost:8081>, evaluate the completed run, and compare its baseline score with a generated probe. Probes operate on copies and do not alter CodePilot's run.
+5. Stop the stack with `docker compose down`.
+
+The Compose runner uses disposable containers, but they share the host kernel and the runner has Docker Engine access. This is a portfolio MVP, not a production-grade isolation boundary.
+
 The included target starts with intentionally failing tests. Running them directly before an agent proposal should show the seeded Unicode normalization failure:
 
 ```powershell
